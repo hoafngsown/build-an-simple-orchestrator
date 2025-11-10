@@ -157,6 +157,7 @@ func main() {
 	}
 
 	go runTasks(&w)
+	go w.CollectStats()
 	api.Start()
 }
 
@@ -173,6 +174,6 @@ func runTasks(w *worker.Worker) {
 		}
 
 		log.Println("Sleeping for 10 seconds.")
-		time.Sleep(10 * time.Second)
+		time.Sleep(5 * time.Second)
 	}
 }
