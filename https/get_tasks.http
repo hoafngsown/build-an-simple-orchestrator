@@ -1,0 +1,2 @@
+### Get task list from manager
+GET http://localhost:5556/tasks
