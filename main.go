@@ -29,6 +29,7 @@ func setupWorker() *worker.Api {
 
 	go w.RunTasks()
 	go w.CollectStats()
+	go w.UpdateTasks()
 	go wapi.Start()
 
 	return &wapi
@@ -46,5 +47,7 @@ func setupManager(workerApi *worker.Api) {
 
 	go m.ProcessTasks()
 	go m.UpdateTasks()
+	go m.DoHealthChecks()
+
 	mapi.Start()
 }

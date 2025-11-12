@@ -55,6 +55,11 @@ type DockerResult struct {
 	Result string
 }
 
+type DockerInspectResponse struct {
+	Error     error
+	Container *container.InspectResponse
+}
+
 func NewConfig(t *Task) Config {
 	return Config{
 		Name:          t.Name,
@@ -178,4 +183,18 @@ func (d *Docker) Stop(id string) DockerResult {
 		Result:      "success",
 		Error:       nil,
 	}
+}
+
+func (d *Docker) Inspect(containerID string) DockerInspectResponse {
+	dc, _ := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	ctx := context.Background()
+
+	resp, err := dc.ContainerInspect(ctx, containerID)
+
+	if err != nil {
+		log.Printf("Error inspecting container %v: %v\n", containerID, err)
+		return DockerInspectResponse{Error: err}
+	}
+
+	return DockerInspectResponse{Container: &resp}
 }
