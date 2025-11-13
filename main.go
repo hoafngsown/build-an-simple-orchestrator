@@ -1,6 +1,7 @@
 package main
 
 import (
+	"Mine-Cube/logger"
 	"Mine-Cube/manager"
 	"Mine-Cube/task"
 	"Mine-Cube/worker"
@@ -13,6 +14,8 @@ import (
 )
 
 func main() {
+	logger.Initialize()
+
 	workerApi := setupWorker()
 	setupManager(workerApi)
 }
@@ -32,13 +35,17 @@ func setupWorker() *worker.Api {
 	go w.UpdateTasks()
 	go wapi.Start()
 
+	logger.WithFields(map[string]interface{}{
+		"address": wh,
+		"port":    wp,
+	}).Info("Worker setup completed")
+
 	return &wapi
 }
 
 func setupManager(workerApi *worker.Api) {
 	mh := os.Getenv("MANAGER_HOST")
 	mp, _ := strconv.Atoi(os.Getenv("MANAGER_PORT"))
-	fmt.Println("manager: ", mh, ":", mp)
 
 	workers := []string{fmt.Sprintf("%s:%d", workerApi.Address, workerApi.Port)}
 
@@ -49,5 +56,11 @@ func setupManager(workerApi *worker.Api) {
 	go m.UpdateTasks()
 	go m.DoHealthChecks()
 
+	logger.WithFields(map[string]interface{}{
+		"address": mh,
+		"port":    mp,
+	}).Info("Manager setup completed")
+
 	mapi.Start()
+
 }

@@ -1,9 +1,9 @@
 package task
 
 import (
+	"Mine-Cube/logger"
 	"context"
 	"io"
-	"log"
 	"math"
 	"os"
 
@@ -13,6 +13,8 @@ import (
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
 )
+
+var log = logger.GetLogger("docker")
 
 type Config struct {
 	// Name of the container
@@ -73,7 +75,7 @@ func NewDocker(config Config) *Docker {
 	dc, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 
 	if err != nil {
-		log.Printf("Error creating Docker client: %v\n", err)
+		log.Errorf("Failed to create Docker client: %v", err)
 		return nil
 	}
 
@@ -86,10 +88,13 @@ func NewDocker(config Config) *Docker {
 func (d *Docker) Run() DockerResult {
 	// Pulling image from registry
 	ctx := context.Background()
+
+	log.WithField("image", d.Config.Image).Info("Pulling Docker image")
+
 	reader, err := d.Client.ImagePull(ctx, d.Config.Image, image.PullOptions{})
 
 	if err != nil {
-		log.Printf("Error pulling image %s: %v\n", d.Config.Image, err)
+		log.WithField("image", d.Config.Image).Errorf("Failed to pull image: %v", err)
 		return DockerResult{Error: err}
 	}
 
@@ -120,20 +125,29 @@ func (d *Docker) Run() DockerResult {
 	}
 
 	// Creating container
+	log.WithField("name", d.Config.Name).Info("Creating container")
+
 	res, err := d.Client.ContainerCreate(ctx, &containerConfig, &hostConfig, nil, nil, d.Config.Name)
 	if err != nil {
-		log.Printf("Error creating container %s: %v\n", d.Config.Name, err)
+		log.WithField("name", d.Config.Name).Errorf("Failed to create container: %v", err)
 		return DockerResult{Error: err}
 	}
 
-	log.Printf("Container created with warnings: %s\n", res.Warnings)
+	if len(res.Warnings) > 0 {
+		log.WithFields(map[string]interface{}{
+			"name":     d.Config.Name,
+			"warnings": res.Warnings,
+		}).Warn("Container created with warnings")
+	}
 
 	containerID := res.ID
 
 	// Starting container
+	log.WithField("container_id", containerID).Info("Starting container")
+
 	err = d.Client.ContainerStart(ctx, containerID, container.StartOptions{})
 	if err != nil {
-		log.Printf("Error starting container %s: %v\n", containerID, err)
+		log.WithField("container_id", containerID).Errorf("Failed to start container: %v", err)
 		return DockerResult{Error: err}
 	}
 
@@ -145,7 +159,7 @@ func (d *Docker) Run() DockerResult {
 		container.LogsOptions{ShowStdout: true, ShowStderr: true},
 	)
 	if err != nil {
-		log.Printf("Error getting logs for container %s: %v\n", containerID, err)
+		log.WithField("container_id", containerID).Errorf("Failed to get container logs: %v", err)
 		return DockerResult{Error: err}
 	}
 
@@ -161,11 +175,15 @@ func (d *Docker) Run() DockerResult {
 func (d *Docker) Stop(id string) DockerResult {
 	ctx := context.Background()
 
+	log.WithField("container_id", id).Info("Stopping container")
+
 	err := d.Client.ContainerStop(ctx, id, container.StopOptions{})
 	if err != nil {
-		log.Printf("Error stopping container %s: %v\n", id, err)
+		log.WithField("container_id", id).Errorf("Failed to stop container: %v", err)
 		return DockerResult{Error: err}
 	}
+
+	log.WithField("container_id", id).Info("Removing container")
 
 	err = d.Client.ContainerRemove(ctx, id, container.RemoveOptions{
 		RemoveVolumes: true,
@@ -173,9 +191,11 @@ func (d *Docker) Stop(id string) DockerResult {
 		Force:         false,
 	})
 	if err != nil {
-		log.Printf("Error removing container %s: %v\n", id, err)
+		log.WithField("container_id", id).Errorf("Failed to remove container: %v", err)
 		return DockerResult{Error: err}
 	}
+
+	log.WithField("container_id", id).Info("Container stopped and removed successfully")
 
 	return DockerResult{
 		ContainerId: id,
@@ -192,7 +212,7 @@ func (d *Docker) Inspect(containerID string) DockerInspectResponse {
 	resp, err := dc.ContainerInspect(ctx, containerID)
 
 	if err != nil {
-		log.Printf("Error inspecting container %v: %v\n", containerID, err)
+		log.WithField("container_id", containerID).Errorf("Failed to inspect container: %v", err)
 		return DockerInspectResponse{Error: err}
 	}
 

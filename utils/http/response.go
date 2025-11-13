@@ -1,10 +1,12 @@
 package httputil
 
 import (
+	"Mine-Cube/logger"
 	"encoding/json"
-	"log"
 	"net/http"
 )
+
+var log = logger.GetLogger("http")
 
 func WriteJSON(w http.ResponseWriter, code int, data interface{}) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -12,7 +14,7 @@ func WriteJSON(w http.ResponseWriter, code int, data interface{}) error {
 
 	if data != nil {
 		if err := json.NewEncoder(w).Encode(data); err != nil {
-			log.Printf("error encoding JSON response: %v\n", err)
+			log.Errorf("Failed to encode JSON response: %v", err)
 			return err
 		}
 	}
@@ -21,7 +23,7 @@ func WriteJSON(w http.ResponseWriter, code int, data interface{}) error {
 }
 
 func WriteError(w http.ResponseWriter, code int, message string) {
-	log.Printf("%s\n", message)
+	log.WithField("status_code", code).Warn(message)
 
 	response := ErrorResponse{
 		HTTPStatusCode: code,

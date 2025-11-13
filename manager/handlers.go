@@ -1,15 +1,17 @@
 package manager
 
 import (
+	"Mine-Cube/logger"
 	"Mine-Cube/task"
 	httputil "Mine-Cube/utils/http"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+var handlerLog = logger.GetLogger("manager.api")
 
 func (a *Api) StartTaskHandler(w http.ResponseWriter, r *http.Request) {
 	te, err := httputil.DecodeJSON[task.TaskEvent](r)
@@ -19,7 +21,7 @@ func (a *Api) StartTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	a.Manager.AddTask(te)
-	log.Printf("Added task %v\n", te.Task.ID)
+	handlerLog.WithField("task_id", te.Task.ID).Info("Task added via API")
 	httputil.WriteJSON(w, http.StatusCreated, te.Task)
 }
 
@@ -52,7 +54,7 @@ func (a *Api) StopTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	a.Manager.AddTask(te)
 
-	log.Printf("Added task event %v to stop task %v\n", te.ID, taskToStop.ID)
+	handlerLog.WithField("task_id", taskToStop.ID).Info("Task stop requested via API")
 
 	httputil.WriteNoContent(w)
 }

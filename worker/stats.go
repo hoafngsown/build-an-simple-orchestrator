@@ -1,13 +1,15 @@
 package worker
 
 import (
-	"log"
+	"Mine-Cube/logger"
 
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/load"
 	"github.com/shirou/gopsutil/v3/mem"
 )
+
+var statsLog = logger.GetLogger("worker.stats")
 
 type Stats struct {
 	MemStats  *mem.VirtualMemoryStat
@@ -73,7 +75,7 @@ func GetMemoryInfo() *mem.VirtualMemoryStat {
 	memstats, err := mem.VirtualMemory()
 
 	if err != nil {
-		log.Printf("Error reading memory info: %v", err)
+		statsLog.Errorf("Error reading memory info: %v", err)
 		return &mem.VirtualMemoryStat{}
 	}
 
@@ -84,7 +86,7 @@ func GetDiskInfo() *disk.UsageStat {
 	diskstats, err := disk.Usage("/")
 
 	if err != nil {
-		log.Printf("Error reading disk info: %v", err)
+		statsLog.Errorf("Error reading disk info: %v", err)
 		return &disk.UsageStat{}
 	}
 
@@ -95,7 +97,7 @@ func GetCpuStats() []cpu.TimesStat {
 	stats, err := cpu.Times(false)
 
 	if err != nil {
-		log.Printf("Error reading CPU stats: %v", err)
+		statsLog.Errorf("Error reading CPU stats: %v", err)
 		return []cpu.TimesStat{}
 	}
 
@@ -106,7 +108,7 @@ func GetLoadAvg() *load.AvgStat {
 	loadavg, err := load.Avg()
 
 	if err != nil {
-		log.Printf("Error reading load average: %v", err)
+		statsLog.Errorf("Error reading load average: %v", err)
 		return &load.AvgStat{}
 	}
 

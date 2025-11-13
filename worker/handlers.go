@@ -1,12 +1,14 @@
 package worker
 
 import (
+	"Mine-Cube/logger"
 	"Mine-Cube/task"
 	httputil "Mine-Cube/utils/http"
 	"fmt"
-	"log"
 	"net/http"
 )
+
+var handlerLog = logger.GetLogger("worker.api")
 
 func (a *Api) StartTaskHandler(w http.ResponseWriter, r *http.Request) {
 	te, err := httputil.DecodeJSON[task.TaskEvent](r)
@@ -16,7 +18,7 @@ func (a *Api) StartTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	a.Worker.AddTask(te.Task)
-	log.Printf("Added task %v\n", te.Task.ID)
+	handlerLog.WithField("task_id", te.Task.ID).Info("Task added via API")
 	httputil.WriteJSON(w, http.StatusCreated, te.Task)
 }
 
@@ -41,11 +43,10 @@ func (a *Api) StopTaskHandler(w http.ResponseWriter, r *http.Request) {
 	taskCopy.State = task.Completed
 	a.Worker.AddTask(taskCopy)
 
-	log.Printf(
-		"Added task %v to stop container %v\n",
-		taskToStop.ID,
-		taskToStop.ContainerID,
-	)
+	handlerLog.WithFields(map[string]interface{}{
+		"task_id":      taskToStop.ID,
+		"container_id": taskToStop.ContainerID,
+	}).Info("Task stop requested via API")
 
 	httputil.WriteNoContent(w)
 }
