@@ -3,6 +3,7 @@ package manager
 import (
 	"Mine-Cube/logger"
 	"Mine-Cube/task"
+	httputil "Mine-Cube/utils/http"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -174,10 +175,7 @@ func (m *Manager) SendWork() {
 	d := json.NewDecoder(resp.Body)
 
 	if resp.StatusCode != http.StatusCreated {
-		e := struct {
-			HTTPStatusCode int    `json:"http_status_code"`
-			Message        string `json:"message"`
-		}{}
+		e := httputil.ErrorResponse{}
 
 		err := d.Decode(&e)
 
@@ -351,10 +349,7 @@ func (m *Manager) restartTask(t *task.Task) {
 
 	d := json.NewDecoder(resp.Body)
 	if resp.StatusCode != http.StatusCreated {
-		e := struct {
-			HTTPStatusCode int    `json:"http_status_code"`
-			Message        string `json:"message"`
-		}{}
+		e := httputil.ErrorResponse{}
 
 		err := d.Decode(&e)
 

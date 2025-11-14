@@ -14,7 +14,12 @@ Content-Type: application/json
         "7777/tcp": {}
     },
     "PortBindings": {
-        "7777/tcp": "7777"
+        "7777/tcp": [
+					{
+						"HostIp": "",
+						"HostPort": "7777"
+					}
+				]
     },
     "HealthCheck": "/health"
   }

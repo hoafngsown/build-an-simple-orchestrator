@@ -27,6 +27,8 @@ type Config struct {
 	AttachStderr bool
 	// Exposed ports to the container
 	ExposedPorts nat.PortSet
+	// Port bindings from container port to host port
+	PortBindings nat.PortMap
 	// Command to run in the container
 	Cmd []string
 	// Image to use for the container
@@ -66,6 +68,7 @@ func NewConfig(t *Task) Config {
 	return Config{
 		Name:          t.Name,
 		ExposedPorts:  t.ExposedPorts,
+		PortBindings:  t.PortBindings,
 		Image:         t.Image,
 		RestartPolicy: t.RestartPolicy,
 	}
@@ -121,7 +124,8 @@ func (d *Docker) Run() DockerResult {
 	hostConfig := container.HostConfig{
 		Resources:       resources,
 		RestartPolicy:   restartPolicy,
-		PublishAllPorts: true,
+		PublishAllPorts: false,
+		PortBindings:    d.Config.PortBindings,
 	}
 
 	// Creating container
